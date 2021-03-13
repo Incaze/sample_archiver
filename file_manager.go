@@ -54,10 +54,6 @@ func getInputFile() [][]byte {
 			for j := i; j < bufferLen; j++ {
 				batch = append(batch, buffer[j])
 			}
-			batchLen := len(batch)
-			for j := batchLen; j < BATCH_SIZE; j++ {
-				batch = append(batch, MANAGE_BYTE)
-			}
 		}
 		if len(batch) == 0 {
 			break

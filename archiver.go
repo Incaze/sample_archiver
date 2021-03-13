@@ -26,6 +26,10 @@ func getBufferForArchive(buffer [][]byte) ([]byte, [][]byte, []byte) {
 	dict := make(map[string][]byte)
 	value := []byte{0, 0}
 	for index, batch := range buffer {
+		if len(batch)-BATCH_SIZE < 0 {
+			result = appendManageBytesWithBatch(result, batch)
+			break
+		}
 		key := string(batch)
 		if _, ok := dict[key]; !ok {
 			if len(dict) < DICT_SIZE {
@@ -35,10 +39,7 @@ func getBufferForArchive(buffer [][]byte) ([]byte, [][]byte, []byte) {
 					result = append(result, value[0], value[1])
 				}
 			} else {
-				result = append(result, MANAGE_BYTE, MANAGE_BYTE)
-				for j := 0; j < len(batch); j++ {
-					result = append(result, batch[j])
-				}
+				result = appendManageBytesWithBatch(result, batch)
 			}
 			value = incValue(value)
 		} else {
@@ -47,6 +48,14 @@ func getBufferForArchive(buffer [][]byte) ([]byte, [][]byte, []byte) {
 	}
 	dictSize := []byte{byte(len(dict) / 256), byte(len(dict) % 256)}
 	return result, dictSlice, dictSize
+}
+
+func appendManageBytesWithBatch(result []byte, batch []byte) []byte {
+	result = append(result, MANAGE_BYTE, MANAGE_BYTE)
+	for _, val := range batch {
+		result = append(result, val)
+	}
+	return result
 }
 
 func decodeBuffer(buffer []byte) [][]byte {
@@ -66,6 +75,7 @@ func decodeBuffer(buffer []byte) [][]byte {
 				continue
 			}
 			decodedBuffer = append(decodedBuffer, []byte{buffer[i+3], buffer[i+4]})
+			i += 3
 		} else {
 			x := string([]byte{buffer[i], buffer[i+1]})
 			decodedBuffer = append(decodedBuffer, dict[x])
